@@ -2,11 +2,9 @@
 Vercel serverless entry point for Phase 3 Todo Chatbot Backend.
 This file is specifically for Vercel deployment.
 """
-from mangum import Mangum
+# Import the FastAPI app
 from src.main import app
 
-# Create Mangum handler for Vercel
-handler = Mangum(app, lifespan="off")
-
-# Export for Vercel
-__all__ = ["handler"]
+# Vercel expects 'app' to be the ASGI application
+# No need for Mangum - Vercel has native ASGI support
+__all__ = ["app"]
