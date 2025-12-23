@@ -78,5 +78,13 @@ def create_app() -> FastAPI:
     return app
 
 
-# Create app instance for uvicorn
+# Create app instance for uvicorn and Vercel
 app = create_app()
+
+# Vercel serverless handler (using Mangum for AWS Lambda compatibility)
+try:
+    from mangum import Mangum
+    handler = Mangum(app)
+except ImportError:
+    # Mangum not available (local development)
+    handler = None

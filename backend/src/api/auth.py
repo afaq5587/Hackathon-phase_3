@@ -10,9 +10,9 @@ Per Constitution Principle V: Authentication Continuity
 from datetime import datetime
 from typing import Optional
 
+import jwt
 from fastapi import HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
 
 from ..config import get_settings
 
@@ -77,7 +77,13 @@ def decode_token(token: str) -> TokenPayload:
             settings.better_auth_secret,
             algorithms=[ALGORITHM],
         )
-    except JWTError as e:
+    except jwt.ExpiredSignatureError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from e
+    except jwt.InvalidTokenError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
