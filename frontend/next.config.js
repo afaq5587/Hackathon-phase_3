@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  serverExternalPackages: ["better-auth", "better-sqlite3"],
+  serverExternalPackages: ["better-auth"],
 }
 
 module.exports = nextConfig

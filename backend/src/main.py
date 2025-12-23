@@ -7,7 +7,7 @@ Per CLAUDE.md:
 - Handle errors with HTTPException
 """
 
-from contextlib import asynccontextmanager
+import os
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,17 +15,9 @@ from fastapi.responses import JSONResponse
 
 from .api import api_router, include_routers
 from .config import get_settings
-from .db import close_db, init_db
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Application lifespan handler for startup/shutdown events."""
-    # Startup
-    await init_db()
-    yield
-    # Shutdown
-    await close_db()
+# Check if running in serverless environment
+IS_SERVERLESS = os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME")
 
 
 def create_app() -> FastAPI:
@@ -41,7 +33,6 @@ def create_app() -> FastAPI:
         title="Phase 3 Todo Chatbot API",
         description="AI-Powered Todo Chatbot API for natural language task management",
         version="1.0.0",
-        lifespan=lifespan,
     )
 
     # Configure CORS per constitution
@@ -73,10 +64,26 @@ def create_app() -> FastAPI:
     @app.get("/health")
     async def health_check():
         """Health check endpoint for monitoring."""
-        return {"status": "healthy", "version": "1.0.0"}
+        return {
+            "status": "healthy",
+            "version": "1.0.0",
+            "environment": "serverless" if IS_SERVERLESS else "local"
+        }
+
+    # Startup event for non-serverless environments
+    if not IS_SERVERLESS:
+        @app.on_event("startup")
+        async def startup():
+            from .db import init_db
+            await init_db()
+
+        @app.on_event("shutdown")
+        async def shutdown():
+            from .db import close_db
+            await close_db()
 
     return app
 
 
-# Create app instance for uvicorn
+# Create app instance
 app = create_app()
